@@ -2,10 +2,13 @@ import numpy as np
 from math import isclose, floor, ceil, pi, tan
 from camera import Camera
 
+import pygame
+import random
+
 class Renderer(object):
     def __init__(self, screen):
         self.screen = screen
-        _, _, self.width, self.height = self.screen.get_react()
+        _, _, self.width, self.height = self.screen.get_rect()
 
         self.camera = Camera()
         self.glViewport(0, 0, self.width, self.height)
@@ -13,6 +16,10 @@ class Renderer(object):
 
         self.glColor(1, 1, 1)
         self.glClearColor(0, 0, 0)
+
+        self.glClear()
+
+        self.scene = []
 
     
     def glViewport(self, x, y, width, height):
@@ -128,19 +135,36 @@ class Renderer(object):
                 limit += 1
     
     def glRender(self):
-        for x in range(self.vpX, self.vpX + self.vpWidth):
-            for y in range(self.vpY, self.vpY + self.vpHeight):
 
-                if 0 <= x < self.width and 0 <= y < self.height:
+        indeces = [(i, j) for i in range(self.vpWidth) for j in range(self.vpHeight)]
+        random.shuffle(indeces)
 
-                    orig = self.camera.translation
+        for i, j in indeces:
+            x = i + self.vpX
+            y = j + self.vpY
 
-                    pX = ((x + 0.5 - self.vpX) / self.vpWidth) * 2 - 1
-                    pY = ((y + 0.5 - self.vpY) / self.vpHeight) * 2 - 1 
+            if 0 <= x < self.width and 0 <= y < self.height:
 
-                    pX *= self.rightEdge
-                    pY *= self.topEdge
-                    pZ = -self.nearPlane
+                pX = ((x + 0.5 - self.vpX) / self.vpWidth) * 2 - 1
+                pY = ((y + 0.5 - self.vpY) / self.vpHeight) * 2 - 1 
 
-                    dir = [pX, pY, pZ]
-                    dir /= np.linalg.norm(dir)
+                pX *= self.rightEdge
+                pY *= self.topEdge
+                pZ = -self.nearPlane
+
+                dir = [pX, pY, pZ]
+                dir /= np.linalg.norm(dir)
+
+                hit = self.glCastRay(self.camera.translation, dir)
+
+                if hit:
+                    self.glPoint(x, y)
+                pygame.display.flip()
+
+    def glCastRay(self, origin, direction):
+        
+        hit = False
+        for obj in self.scene:
+            if obj.ray_intersect(origin, direction):
+                hit = True
+        return hit

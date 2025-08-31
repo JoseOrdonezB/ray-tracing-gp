@@ -2,14 +2,19 @@ import pygame
 from pygame.locals import *
 from gl import *
 from BMP_Writer import GenerateBMP
+from figures import *
 
-width = 960
-height = 540
+width = 256
+height = 256
 
 screen = pygame.display.set_mode((width, height), pygame.SCALED)
-clock = pygame.time.Clock
+clock = pygame.time.Clock()
 
 rend = Renderer(screen)
+
+rend.scene.append(Sphere(position = [0,0,-5], radius = 0.5))
+
+rend.glRender()
 
 isRunning = True
 while isRunning:
@@ -20,9 +25,6 @@ while isRunning:
             if event.key == pygame.K_ESCAPE:
                 isRunning = False
 
-    rend.glClear()
-
-    rend.glRender()
 
     pygame.display.flip()
     clock.tick(60)
