@@ -45,3 +45,10 @@ def RotationMatrix(pitch, yaw, roll):
 						 [0,0,0,1]])
 	
 	return pitchMat * yawMat * rollMat
+
+def reflectVector(normal, direction):
+	reflect = 2 * np.dot(normal, direction)
+	reflect = np.multiply(reflect, normal)
+	reflect = np.subtract(reflect, direction)
+	reflect /= np.linalg.norm(reflect)
+	return reflect

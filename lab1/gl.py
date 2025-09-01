@@ -20,6 +20,7 @@ class Renderer(object):
         self.glClear()
 
         self.scene = []
+        self.lights = []
 
     
     def glViewport(self, x, y, width, height):
@@ -157,14 +158,23 @@ class Renderer(object):
 
                 hit = self.glCastRay(self.camera.translation, dir)
 
+
                 if hit:
-                    self.glPoint(x, y)
+                    if hit.obj.material:
+                        self.glPoint(x, y, hit.obj.material.GetSurfaceColor(hit, self))
                 pygame.display.flip()
 
-    def glCastRay(self, origin, direction):
-        
-        hit = False
+    def glCastRay(self, origin, direction, sceneObj = None):
+        depht = float('inf')
+        intercept = None
+        hit = None
+
         for obj in self.scene:
-            if obj.ray_intersect(origin, direction):
-                hit = True
+            if obj != sceneObj:
+                intercept =  obj.ray_intersect(origin, direction)
+
+                if intercept != None:
+                    if intercept.distance < depht:
+                        hit = intercept
+                        depht = intercept.distance
         return hit
