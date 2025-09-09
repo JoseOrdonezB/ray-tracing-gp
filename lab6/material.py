@@ -86,7 +86,7 @@ class Material(object):
                 reflectColor = [i * Kr for i in reflectColor]
                 refractColor = [i * Kt for i in refractColor]
 
-        surfaceColor = [self.diffuse[i] * (lightColor[i] + reflectColor[i] + refractColor[i]) for i in range(3)]
+        surfaceColor = [finalColor[i] * (lightColor[i] + reflectColor[i] + refractColor[i]) for i in range(3)]
         finalColor = [surfaceColor[i] + specColor[i] for i in range(3)]
         finalColor = [min(1, finalColor[i]) for i in range(3)]
 
