@@ -80,7 +80,7 @@ class Material(object):
                 if refractIntercept != None:
                     refractColor = refractIntercept.obj.material.GetSurfaceColor(refractIntercept, renderer, recursion + 1)
                 else:
-                    refractColor = renderer.glEnvMapColor(intercept.point, reflect) 
+                    refractColor = renderer.glEnvMapColor(intercept.point, refract) 
 
                 Kr, Kt = fresnel(intercept.normal, intercept.rayDirection, 1.0, self.ior)
                 reflectColor = [i * Kr for i in reflectColor]
