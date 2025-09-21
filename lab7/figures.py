@@ -109,9 +109,79 @@ class Disk(Plane):
         
     
 class AABB(Shape):
-    def __init__():
-        return
-    
+    def __init__(self, center, size, material):
+        """
+        center: [cx, cy, cz] -> centro de la caja
+        size: [sx, sy, sz]   -> dimensiones completas de la caja
+        """
+        super().__init__(np.array(center, dtype=float), material)
+
+        half = np.array(size, dtype=float) / 2.0
+        self.min_bound = self.position - half
+        self.max_bound = self.position + half
+        self.type = 'AABB'
+
+    def ray_intersect(self, orig, dir):
+        orig = np.array(orig, dtype=float)
+        dir = np.array(dir, dtype=float)
+
+        invdir = 1.0 / dir
+        sign = [invdir[i] < 0 for i in range(3)]
+
+        # X slabs
+        tmin = (self.max_bound[0] if sign[0] else self.min_bound[0] - orig[0]) * invdir[0]
+        tmax = (self.min_bound[0] if sign[0] else self.max_bound[0] - orig[0]) * invdir[0]
+
+        # Y slabs
+        tymin = (self.max_bound[1] if sign[1] else self.min_bound[1] - orig[1]) * invdir[1]
+        tymax = (self.min_bound[1] if sign[1] else self.max_bound[1] - orig[1]) * invdir[1]
+
+        if (tmin > tymax) or (tymin > tmax):
+            return None
+
+        if tymin > tmin:
+            tmin = tymin
+        if tymax < tmax:
+            tmax = tymax
+
+        # Z slabs
+        tzmin = (self.max_bound[2] if sign[2] else self.min_bound[2] - orig[2]) * invdir[2]
+        tzmax = (self.min_bound[2] if sign[2] else self.max_bound[2] - orig[2]) * invdir[2]
+
+        if (tmin > tzmax) or (tzmin > tmax):
+            return None
+
+        if tzmin > tmin:
+            tmin = tzmin
+        if tzmax < tmax:
+            tmax = tzmax
+
+        if tmin < 0 and tmax < 0:
+            return None
+
+        # usamos tmin como la distancia válida
+        distance = tmin if tmin > 0 else tmax
+        point = orig + distance * dir
+
+        # calcular normal de la cara golpeada
+        epsilon = 1e-6
+        normal = [0, 0, 0]
+        for i in range(3):
+            if abs(point[i] - self.min_bound[i]) < epsilon:
+                normal[i] = -1
+            elif abs(point[i] - self.max_bound[i]) < epsilon:
+                normal[i] = 1
+        normal = np.array(normal, dtype=float)
+
+        return Intercept(
+            point=point,
+            normal=normal,
+            distance=distance,
+            obj=self,
+            rayDirection=dir,
+            texCoord=None
+        )
+
 class Triangle(Shape):
     def __init__():
         return
