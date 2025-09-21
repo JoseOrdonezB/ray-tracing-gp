@@ -57,7 +57,7 @@ class Sphere(Shape):
 class Plane(Shape):
     def __init__(self, position, normal, material):
         super().__init__(position, material)
-        self.normal = np.array(normal, dtype = float)
+        self.normal = np.array(normal, dtype=float)
         self.normal /= np.linalg.norm(self.normal)
         self.type = 'Plane'
 
@@ -66,30 +66,52 @@ class Plane(Shape):
 
         if abs(denom) < 1e-6:
             return None
-        
-        t = np.dot(self.normal, (self.position - orig)) / denom
 
+        t = np.dot(np.subtract(self.position, orig), self.normal) / denom
         if t < 0:
             return None
-        
-        point = orig + t * dir
 
-        normal = self.normal
+        point = np.add(orig, np.multiply(dir, t))
 
         return Intercept(
-            point = point,
-            normal = normal,
-            distance = t,
-            obj = self,
-            rayDirection = dir,
-            texCoord = None
+            point=point,
+            normal=self.normal,
+            distance=t,
+            obj=self,
+            rayDirection=dir,
+            texCoord=None
         )
 
     
 class Disk(Plane):
+    def __init__(self, position, normal, radius, material):
+        super().__init__(position, normal, material)
+        self.radius = radius
+        self.type = 'Disk'
+
+    def ray_intersect(self, orig, dir):
+        plane_hit = super().ray_intersect(orig, dir)
+        if plane_hit is None:
+            return None
+
+        v = np.subtract(plane_hit.point, self.position)
+
+        if np.dot(v, v) <= self.radius * self.radius:
+            return Intercept(
+                point=plane_hit.point,
+                normal=plane_hit.normal,
+                distance=plane_hit.distance,
+                obj=self,
+                rayDirection=dir,
+                texCoord=None
+            )
+        return None
+        
+    
+class AABB(Shape):
     def __init__():
         return
     
-class AABB(Shape):
+class Triangle(Shape):
     def __init__():
         return
