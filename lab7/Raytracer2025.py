@@ -59,6 +59,7 @@ rend.scene.append(Disk(position=[1.5, -1, -4.8], normal=[0.2, 1, 0.3], radius=0.
 rend.scene.append(AABB(center=[0, -1.7, -4.5], size=[0.8, 0.8, 0.8], material = pedestal))
 rend.scene.append(Triangle(v0=[-0.3, -1, -4.7], v1=[0.3, -1, -4.7], v2=[0, -0.4, -4.5], material=triangulo_cobre))
 
+rend.lights.append(DirectionalLight(direction = [1e-6, 1e-6, -1], intensity = 1.2))
 rend.lights.append(AmbientLight(intensity = 1.5))
 
 rend.glRender() 
