@@ -8,46 +8,58 @@ from material import *
 from BMPTexture import BMPTexture
 import os
  
-width = 128
-height = 128
+width = 1080
+height = 720
 
 screen = pygame.display.set_mode((width, height), pygame.SCALED)
 clock = pygame.time.Clock()
 
 rend = Renderer(screen)
 
-base_path = os.path.dirname(__file__)
-background_path = os.path.join(base_path, "textures/background_hdri.bmp")
+# base_path = os.path.dirname(__file__)
+# background_path = os.path.join(base_path, "textures/background_hdri.bmp")
 
-rend.envMap = BMPTexture(background_path)
+# rend.envMap = BMPTexture(background_path)
 
 
 # materiales opacos
-purple = Material(diffuse = [1,0,1], spec=50, ks = 0.3)
-red = Material(diffuse = [1,0,0], spec=50, ks = 0.4)
+suelo = Material(diffuse=[0.9, 0.9, 0.95], spec=50, ks=0.5, matType=OPAQUE)
+pared = Material(diffuse=[0.2, 0.25, 0.35], spec=30, ks=0.25, matType=OPAQUE)
+techo = Material(diffuse=[0.5, 0.5, 0.55], spec=15, ks=0.1, matType=OPAQUE)
 
-# mateiales reflectivos
-#pearl = Material(diffuse = [0.95, 0.90, 0.85], spec = 100, ks = 0.8, matType = REFLECTIVE)
-hematite = Material(diffuse = [0.2, 0.2, 0.25], spec = 80, ks = 0.75, matType = REFLECTIVE)
+pedestal = Material(diffuse=[0.15, 0.15, 0.2], spec=40, ks=0.3, matType=OPAQUE)
+
+triangulo_cobre = Material(diffuse=[0.8, 0.4, 0.1], spec=50, ks=0.4, matType=OPAQUE)
+
+# materiales reflectivos
+oro = Material(diffuse=[1.0, 0.84, 0.0], spec=90, ks=0.8, matType=REFLECTIVE)
+esfera_oro = Material(diffuse=[1.0, 0.84, 0.0], spec=90, ks=0.8, matType=REFLECTIVE)
 
 # materiales transparentes
-#amber = Material(diffuse = [1.0, 0.6, 0.2], spec = 64, ks = 0.15, ior = 1.55, matType = TRANSPARENT)
+disco_vidrio = Material(diffuse=[0.3, 0.6, 1.0], spec=80, ks=0.5, ior=1.5, matType=TRANSPARENT)
 
-# prueba esfera
-#rend.scene.append(Sphere(position = [0, 0, -4], radius = 0.5, material = purple))
+# Escena final
+rend.scene.append(Plane(position=[0, 0, -6], normal=[0, 0, 1], material=pared))
+rend.scene.append(Plane(position=[-3.5, 0, -6], normal=[1, 0, 0], material=pared))
+rend.scene.append(Plane(position=[3.5, 0, -6], normal=[-1, 0, 0], material=pared))
+rend.scene.append(Plane(position=[0, -2, -6], normal=[0, 1, 0], material=suelo))
+rend.scene.append(Plane(position=[0, 2, -6], normal=[0, -1, 0], material=techo))
 
-# prueba plano
-#rend.scene.append(Plane(position = [0, -2, 0], normal = [0, 1, 0], material = red))
 
-# prueba disco
-#rend.scene.append(Disk(position = [0, -1, -4], radius = 1, normal = [0, 1, 0], material = pearl))
+rend.scene.append(Triangle(v0=[0, 1.9, -6], v1=[-0.4, 1.9, -6 + 0.7], v2=[0.4, 1.9, -6 + 0.7], material=oro))
+rend.scene.append(Triangle(v0=[-0.4, 1.9, -6 + 0.7], v1=[-0.8, 1.9, -6 + 1.4], v2=[0, 1.9, -6 + 1.4], material=oro))
+rend.scene.append(Triangle(v0=[0.4, 1.9, -6 + 0.7], v1=[0, 1.9, -6 + 1.4], v2=[0.8, 1.9, -6 + 1.4], material=oro))
 
-# prueba AABB
-rend.scene.append(AABB(center = [1, 1, -4], size = [1, 1, 1], material = red))
+rend.scene.append(AABB(center=[-1.5, -1.7, -4.3], size=[0.8, 0.8, 0.8], material = pedestal))
+rend.scene.append(Sphere(position=[-1.5, -0.8, -4.3], radius=0.4, material = esfera_oro))
 
-# Luces
-rend.lights.append(DirectionalLight(direction = [-1,-1,-1], intensity = 1.2))
-rend.lights.append(AmbientLight())
+rend.scene.append(AABB(center=[1.5, -1.7, -4.8], size=[0.8, 0.8, 0.8], material = pedestal))
+rend.scene.append(Disk(position=[1.5, -1, -4.8], normal=[0.2, 1, 0.3], radius=0.5, material=disco_vidrio))
+
+rend.scene.append(AABB(center=[0, -1.7, -4.5], size=[0.8, 0.8, 0.8], material = pedestal))
+rend.scene.append(Triangle(v0=[-0.3, -1, -4.7], v1=[0.3, -1, -4.7], v2=[0, -0.4, -4.5], material=triangulo_cobre))
+
+rend.lights.append(AmbientLight(intensity = 1.5))
 
 rend.glRender() 
 

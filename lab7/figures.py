@@ -110,10 +110,6 @@ class Disk(Plane):
     
 class AABB(Shape):
     def __init__(self, center, size, material):
-        """
-        center: [cx, cy, cz] -> centro de la caja
-        size: [sx, sy, sz]   -> dimensiones completas de la caja
-        """
         super().__init__(np.array(center, dtype=float), material)
 
         half = np.array(size, dtype=float) / 2.0
@@ -128,11 +124,9 @@ class AABB(Shape):
         invdir = 1.0 / dir
         sign = [invdir[i] < 0 for i in range(3)]
 
-        # X slabs
         tmin = (self.max_bound[0] if sign[0] else self.min_bound[0] - orig[0]) * invdir[0]
         tmax = (self.min_bound[0] if sign[0] else self.max_bound[0] - orig[0]) * invdir[0]
 
-        # Y slabs
         tymin = (self.max_bound[1] if sign[1] else self.min_bound[1] - orig[1]) * invdir[1]
         tymax = (self.min_bound[1] if sign[1] else self.max_bound[1] - orig[1]) * invdir[1]
 
@@ -144,7 +138,6 @@ class AABB(Shape):
         if tymax < tmax:
             tmax = tymax
 
-        # Z slabs
         tzmin = (self.max_bound[2] if sign[2] else self.min_bound[2] - orig[2]) * invdir[2]
         tzmax = (self.min_bound[2] if sign[2] else self.max_bound[2] - orig[2]) * invdir[2]
 
@@ -159,11 +152,9 @@ class AABB(Shape):
         if tmin < 0 and tmax < 0:
             return None
 
-        # usamos tmin como la distancia válida
         distance = tmin if tmin > 0 else tmax
         point = orig + distance * dir
 
-        # calcular normal de la cara golpeada
         epsilon = 1e-6
         normal = [0, 0, 0]
         for i in range(3):
@@ -183,5 +174,51 @@ class AABB(Shape):
         )
 
 class Triangle(Shape):
-    def __init__():
-        return
+    def __init__(self, v0, v1, v2, material):
+        super().__init__(v0, material)
+        self.v0 = np.array(v0, dtype=float)
+        self.v1 = np.array(v1, dtype=float)
+        self.v2 = np.array(v2, dtype=float)
+        self.type = 'Triangle'
+
+        e1 = self.v1 - self.v0
+        e2 = self.v2 - self.v0
+        self.normal = np.cross(e1, e2)
+        self.normal /= np.linalg.norm(self.normal)
+
+    def ray_intersect(self, orig, dir):
+        orig = np.array(orig, dtype=float)
+        dir = np.array(dir, dtype=float)
+
+        EPSILON = 1e-6
+        e1 = self.v1 - self.v0
+        e2 = self.v2 - self.v0
+        h = np.cross(dir, e2)
+        a = np.dot(e1, h)
+
+        if abs(a) < EPSILON:
+            return None
+
+        f = 1.0 / a
+        s = orig - self.v0
+        u = f * np.dot(s, h)
+        if u < 0.0 or u > 1.0:
+            return None
+
+        q = np.cross(s, e1)
+        v = f * np.dot(dir, q)
+        if v < 0.0 or (u + v) > 1.0:
+            return None
+
+        t = f * np.dot(e2, q)
+        if t > EPSILON:
+            point = orig + dir * t
+            return Intercept(
+                point=point,
+                normal=self.normal,
+                distance=t,
+                obj=self,
+                rayDirection=dir,
+                texCoord=None
+            )
+        return None
