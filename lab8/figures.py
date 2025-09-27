@@ -222,3 +222,62 @@ class Triangle(Shape):
                 texCoord=None
             )
         return None
+    
+class Cylinder(Shape):
+    def __init__(self, position, radius, height, material):
+        super().__init__(np.array(position, dtype=float), material)
+        self.radius = float(radius)
+        self.height = float(height)
+        self.type = "Cylinder"
+
+    def ray_intersect(self, orig, dir):
+        orig = np.array(orig, dtype=float)
+        dir = np.array(dir, dtype=float)
+
+        oc = orig - self.position
+
+        a = dir[0]**2 + dir[2]**2
+        b = 2.0 * (oc[0]*dir[0] + oc[2]*dir[2])
+        c = oc[0]**2 + oc[2]**2 - self.radius**2
+
+        EPS = 1e-6
+        hits = []
+
+        # Cuerpo del cilindro
+        if abs(a) > EPS:
+            disc = b*b - 4*a*c
+            if disc >= 0:
+                sqrt_disc = np.sqrt(disc)
+                for t in [(-b - sqrt_disc)/(2*a), (-b + sqrt_disc)/(2*a)]:
+                    if t > EPS:
+                        y = oc[1] + t*dir[1]
+                        if 0 <= y <= self.height:
+                            point = orig + t*dir
+                            normal = np.array([point[0]-self.position[0], 0, point[2]-self.position[2]])
+                            normal /= np.linalg.norm(normal)
+                            hits.append((t, point, normal))
+
+        # Tapas del cilindro
+        for cap_y, n in [(0, np.array([0,-1,0])), (self.height, np.array([0,1,0]))]:
+            if abs(dir[1]) > EPS:
+                t = (cap_y - oc[1]) / dir[1]
+                if t > EPS:
+                    p = orig + t*dir
+                    d = p - self.position
+                    if d[0]**2 + d[2]**2 <= self.radius**2:
+                        point = p
+                        normal = n
+                        hits.append((t, point, normal))
+
+        if not hits:
+            return None
+
+        t, point, normal = min(hits, key=lambda h: h[0])
+        return Intercept(
+            point=point,
+            normal=normal,
+            distance=t,
+            obj=self,
+            rayDirection=dir,
+            texCoord=None
+        )
