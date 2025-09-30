@@ -279,110 +279,48 @@ class Cylinder(Shape):
             rayDirection=dir,
             texCoord=None
         )
-
-class Toroid(Shape):
-    """
-    Toroide centrado en `position`, orientado alrededor del eje Y.
-    - major_radius (R): radio mayor (del centro del toro al centro del tubo)
-    - minor_radius (r): radio menor (radio del tubo)
-
-    Ecuación implícita (con el centro en el origen y eje Y):
-      F(x,y,z) = (x^2 + y^2 + z^2 + R^2 - r^2)^2 - 4 R^2 (x^2 + z^2) = 0
-
-    Intersección rayo (o + t d):
-      Se obtiene un polinomio de grado 4 en t. Se resuelve con numpy.roots
-      y se elige la raíz real positiva más cercana.
-
-    Normal:
-      ∇F = ( ∂F/∂x, ∂F/∂y, ∂F/∂z )
-      con:
-        g = x^2 + y^2 + z^2 + R^2 - r^2
-        ∂F/∂x = 4 x (g - 2 R^2)
-        ∂F/∂y = 4 y g
-        ∂F/∂z = 4 z (g - 2 R^2)
-    """
-    def __init__(self, position, major_radius, minor_radius, material):
+    
+class Ellipsoid(Shape):
+    def __init__(self, position, radius, material):
         super().__init__(np.array(position, dtype=float), material)
-        self.R = float(major_radius)
-        self.r = float(minor_radius)
-        self.type = "Toroid"
+        self.radius = np.array(radius, dtype=float)
+        self.type = "Ellipsoid"
 
     def ray_intersect(self, orig, dir):
         EPS = 1e-6
+        orig = np.array(orig, dtype=float)
+        dir = np.array(dir, dtype=float)
 
-        # Pasar a coords locales del toro (centro en el origen)
-        o = np.array(orig, dtype=float) - self.position
-        d = np.array(dir, dtype=float)
+        o = (orig - self.position) / self.radius
+        d = dir / self.radius
 
-        # Coeficientes auxiliares
-        dx, dy, dz = d
-        ox, oy, oz = o
+        A = np.dot(d, d)
+        B = 2 * np.dot(o, d)
+        C = np.dot(o, o) - 1
 
-        # P(t) = x^2 + y^2 + z^2 = (d·d) t^2 + 2(o·d) t + (o·o)
-        A = np.dot(d, d)                   # d·d
-        B = 2.0 * np.dot(o, d)             # 2 o·d
-        C = np.dot(o, o) + self.R**2 - self.r**2
-
-        # S(t) = x^2 + z^2
-        D = dx*dx + dz*dz
-        E = 2.0 * (ox*dx + oz*dz)
-        F = ox*ox + oz*oz
-
-        # Polinomio cuártico: (A t^2 + B t + C)^2 - 4 R^2 S(t) = 0
-        a4 = A*A
-        a3 = 2.0*A*B
-        a2 = B*B + 2.0*A*C - 4.0*self.R*self.R*D
-        a1 = 2.0*B*C - 8.0*self.R*self.R*(ox*dx + oz*dz)
-        a0 = C*C - 4.0*self.R*self.R*F
-
-        # Resolver raíces (t puede ser complejo). Filtrar reales y positivas.
-        coeffs = np.array([a4, a3, a2, a1, a0], dtype=float)
-
-        # Si el término líder es ~0 por alguna razón numérica, no intentamos intersección.
-        if abs(coeffs[0]) < EPS:
+        disc = B*B - 4*A*C
+        if disc < 0:
             return None
 
-        roots = np.roots(coeffs)
-        # Nos quedamos con raíces reales (parte imaginaria ~ 0) y t > 0
-        real_ts = []
-        for r in roots:
-            if abs(r.imag) < 1e-6:
-                t = r.real
-                if t > EPS:
-                    real_ts.append(t)
+        sqrt_disc = np.sqrt(disc)
+        t0 = (-B - sqrt_disc) / (2*A)
+        t1 = (-B + sqrt_disc) / (2*A)
 
-        if not real_ts:
+        t = None
+        if t0 > EPS:
+            t = t0
+        elif t1 > EPS:
+            t = t1
+        if t is None:
             return None
 
-        t = min(real_ts)  # intersección más cercana
+        point = orig + dir * t
 
-        # Punto de impacto en coords globales
-        point = np.add(orig, np.multiply(dir, t))
+        local = (point - self.position) / (self.radius * self.radius)
+        normal = local / np.linalg.norm(local)
 
-        # Normal por el gradiente de F, evaluado en coords locales
-        p_local = o + d * t
-        x, y, z = p_local
-        g = x*x + y*y + z*z + self.R*self.R - self.r*self.r
-
-        nx = 4.0 * x * (g - 2.0*self.R*self.R)
-        ny = 4.0 * y * g
-        nz = 4.0 * z * (g - 2.0*self.R*self.R)
-
-        normal = np.array([nx, ny, nz], dtype=float)
-        nlen = np.linalg.norm(normal)
-        if nlen < EPS:
-            # Fallback muy raro (evita división por cero)
-            # Usamos una aproximación: proyectar al anillo y salir radialmente
-            rho = np.hypot(x, z) + EPS
-            # vector desde el "centro del tubo" hacia el punto
-            cx = x * (1.0 - self.R / rho)
-            cz = z * (1.0 - self.R / rho)
-            normal = np.array([cx, y, cz], dtype=float)
-            nlen = np.linalg.norm(normal)
-            if nlen < EPS:
-                return None
-
-        normal /= nlen
+        if np.dot(normal, dir) > 0:
+            normal = -normal
 
         return Intercept(
             point=point,
