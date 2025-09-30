@@ -8,8 +8,8 @@ from material import *
 from BMPTexture import BMPTexture
 import os
  
-width = 720
-height = 480
+width = 256
+height = 256
 
 screen = pygame.display.set_mode((width, height), pygame.SCALED)
 clock = pygame.time.Clock()
@@ -33,9 +33,10 @@ oro = Material(diffuse=[1.0, 0.84, 0.0], spec=90, ks=0.8, matType=REFLECTIVE)
 # materiales transparentes
 vidrio = Material(diffuse=[1, 1, 1], spec=80, ks=0.5, ior=1.5, matType=TRANSPARENT)
 
-rend.scene.append(Cylinder(position = [-2, -1.5, -4], radius = 0.5, height = 2, material = red))
-rend.scene.append(Cylinder(position = [0, -1.5, -4], radius = 0.5, height = 2, material = oro))
-rend.scene.append(Cylinder(position = [2, -1.5, -4], radius = 0.5, height = 2, material = vidrio))
+rend.scene.append(Cylinder(position = [-2, -1.5, -4], radius = 0.5, height = 1, material = red))
+rend.scene.append(Cylinder(position = [0, -1.5, -4], radius = 0.5, height = 1, material = oro))
+rend.scene.append(Cylinder(position = [2, -1.5, -4], radius = 0.5, height = 1, material = vidrio))
+
 
 rend.lights.append(DirectionalLight(direction = [-1,-1,-1], intensity = 1.2))
 rend.lights.append(AmbientLight())

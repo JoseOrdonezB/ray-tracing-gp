@@ -230,10 +230,13 @@ class Cylinder(Shape):
         self.height = float(height)
         self.type = "Cylinder"
 
+        self.bottom_cap = Disk(self.position, [0, -1, 0], radius, material)
+        top_center = self.position + np.array([0, self.height, 0])
+        self.top_cap = Disk(top_center, [0, 1, 0], radius, material)
+
     def ray_intersect(self, orig, dir):
         orig = np.array(orig, dtype=float)
         dir = np.array(dir, dtype=float)
-
         oc = orig - self.position
 
         a = dir[0]**2 + dir[2]**2
@@ -243,36 +246,144 @@ class Cylinder(Shape):
         EPS = 1e-6
         hits = []
 
-        # Cuerpo del cilindro
         if abs(a) > EPS:
             disc = b*b - 4*a*c
-            if disc >= 0:
+            if disc >= -EPS:
+                disc = max(disc, 0.0)
                 sqrt_disc = np.sqrt(disc)
-                for t in [(-b - sqrt_disc)/(2*a), (-b + sqrt_disc)/(2*a)]:
+                for t in [(-b - sqrt_disc) / (2*a), (-b + sqrt_disc) / (2*a)]:
                     if t > EPS:
-                        y = oc[1] + t*dir[1]
-                        if 0 <= y <= self.height:
+                        y_local = oc[1] + t*dir[1]
+                        if 0 <= y_local <= self.height:
                             point = orig + t*dir
-                            normal = np.array([point[0]-self.position[0], 0, point[2]-self.position[2]])
+                            dx = point[0] - self.position[0]
+                            dz = point[2] - self.position[2]
+                            normal = np.array([dx, 0, dz], dtype=float)
                             normal /= np.linalg.norm(normal)
                             hits.append((t, point, normal))
 
-        # Tapas del cilindro
-        for cap_y, n in [(0, np.array([0,-1,0])), (self.height, np.array([0,1,0]))]:
-            if abs(dir[1]) > EPS:
-                t = (cap_y - oc[1]) / dir[1]
-                if t > EPS:
-                    p = orig + t*dir
-                    d = p - self.position
-                    if d[0]**2 + d[2]**2 <= self.radius**2:
-                        point = p
-                        normal = n
-                        hits.append((t, point, normal))
+        for cap in [self.bottom_cap, self.top_cap]:
+            cap_hit = cap.ray_intersect(orig, dir)
+            if cap_hit is not None:
+                hits.append((cap_hit.distance, cap_hit.point, cap_hit.normal))
 
         if not hits:
             return None
 
         t, point, normal = min(hits, key=lambda h: h[0])
+        return Intercept(
+            point=point,
+            normal=normal,
+            distance=t,
+            obj=self,
+            rayDirection=dir,
+            texCoord=None
+        )
+
+class Toroid(Shape):
+    """
+    Toroide centrado en `position`, orientado alrededor del eje Y.
+    - major_radius (R): radio mayor (del centro del toro al centro del tubo)
+    - minor_radius (r): radio menor (radio del tubo)
+
+    Ecuación implícita (con el centro en el origen y eje Y):
+      F(x,y,z) = (x^2 + y^2 + z^2 + R^2 - r^2)^2 - 4 R^2 (x^2 + z^2) = 0
+
+    Intersección rayo (o + t d):
+      Se obtiene un polinomio de grado 4 en t. Se resuelve con numpy.roots
+      y se elige la raíz real positiva más cercana.
+
+    Normal:
+      ∇F = ( ∂F/∂x, ∂F/∂y, ∂F/∂z )
+      con:
+        g = x^2 + y^2 + z^2 + R^2 - r^2
+        ∂F/∂x = 4 x (g - 2 R^2)
+        ∂F/∂y = 4 y g
+        ∂F/∂z = 4 z (g - 2 R^2)
+    """
+    def __init__(self, position, major_radius, minor_radius, material):
+        super().__init__(np.array(position, dtype=float), material)
+        self.R = float(major_radius)
+        self.r = float(minor_radius)
+        self.type = "Toroid"
+
+    def ray_intersect(self, orig, dir):
+        EPS = 1e-6
+
+        # Pasar a coords locales del toro (centro en el origen)
+        o = np.array(orig, dtype=float) - self.position
+        d = np.array(dir, dtype=float)
+
+        # Coeficientes auxiliares
+        dx, dy, dz = d
+        ox, oy, oz = o
+
+        # P(t) = x^2 + y^2 + z^2 = (d·d) t^2 + 2(o·d) t + (o·o)
+        A = np.dot(d, d)                   # d·d
+        B = 2.0 * np.dot(o, d)             # 2 o·d
+        C = np.dot(o, o) + self.R**2 - self.r**2
+
+        # S(t) = x^2 + z^2
+        D = dx*dx + dz*dz
+        E = 2.0 * (ox*dx + oz*dz)
+        F = ox*ox + oz*oz
+
+        # Polinomio cuártico: (A t^2 + B t + C)^2 - 4 R^2 S(t) = 0
+        a4 = A*A
+        a3 = 2.0*A*B
+        a2 = B*B + 2.0*A*C - 4.0*self.R*self.R*D
+        a1 = 2.0*B*C - 8.0*self.R*self.R*(ox*dx + oz*dz)
+        a0 = C*C - 4.0*self.R*self.R*F
+
+        # Resolver raíces (t puede ser complejo). Filtrar reales y positivas.
+        coeffs = np.array([a4, a3, a2, a1, a0], dtype=float)
+
+        # Si el término líder es ~0 por alguna razón numérica, no intentamos intersección.
+        if abs(coeffs[0]) < EPS:
+            return None
+
+        roots = np.roots(coeffs)
+        # Nos quedamos con raíces reales (parte imaginaria ~ 0) y t > 0
+        real_ts = []
+        for r in roots:
+            if abs(r.imag) < 1e-6:
+                t = r.real
+                if t > EPS:
+                    real_ts.append(t)
+
+        if not real_ts:
+            return None
+
+        t = min(real_ts)  # intersección más cercana
+
+        # Punto de impacto en coords globales
+        point = np.add(orig, np.multiply(dir, t))
+
+        # Normal por el gradiente de F, evaluado en coords locales
+        p_local = o + d * t
+        x, y, z = p_local
+        g = x*x + y*y + z*z + self.R*self.R - self.r*self.r
+
+        nx = 4.0 * x * (g - 2.0*self.R*self.R)
+        ny = 4.0 * y * g
+        nz = 4.0 * z * (g - 2.0*self.R*self.R)
+
+        normal = np.array([nx, ny, nz], dtype=float)
+        nlen = np.linalg.norm(normal)
+        if nlen < EPS:
+            # Fallback muy raro (evita división por cero)
+            # Usamos una aproximación: proyectar al anillo y salir radialmente
+            rho = np.hypot(x, z) + EPS
+            # vector desde el "centro del tubo" hacia el punto
+            cx = x * (1.0 - self.R / rho)
+            cz = z * (1.0 - self.R / rho)
+            normal = np.array([cx, y, cz], dtype=float)
+            nlen = np.linalg.norm(normal)
+            if nlen < EPS:
+                return None
+
+        normal /= nlen
+
         return Intercept(
             point=point,
             normal=normal,
