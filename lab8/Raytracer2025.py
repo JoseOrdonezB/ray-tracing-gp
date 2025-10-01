@@ -8,8 +8,8 @@ from material import *
 from BMPTexture import BMPTexture
 import os
  
-width = 1920
-height = 1080
+width = 1512
+height = 982
 
 screen = pygame.display.set_mode((width, height), pygame.SCALED)
 clock = pygame.time.Clock()
@@ -29,17 +29,21 @@ blue = Material(diffuse = [0, 0, 1], spec = 50, ks = 0.5, matType = OPAQUE)
 
 # materiales reflectivos
 oro = Material(diffuse=[1.0, 0.84, 0.0], spec=90, ks=0.8, matType=REFLECTIVE)
+plata = Material(diffuse=[0.9, 0.9, 0.9], spec=100, ks=0.9, matType=REFLECTIVE)
+
 
 # materiales transparentes
 vidrio = Material(diffuse=[1, 1, 1], spec=80, ks=0.5, ior=1.5, matType=TRANSPARENT)
+vidrio_azul = Material(diffuse=[0.6, 0.8, 1.0], spec=90, ks=0.6, ior=1.3, matType=TRANSPARENT)
 
-rend.scene.append(Cylinder(position = [-2, -3, -4], radius = 1, height = 1, material = red))
-rend.scene.append(Cylinder(position = [-1, 0, -4], radius = 0.5, height = 1, material = oro))
-rend.scene.append(Cylinder(position = [-3, 3, -4], radius = 0.5, height = 1.5, material = vidrio))
 
-rend.scene.append(Ellipsoid(position = [2, -3, -4], radius = [1.5, 0.5, 1], material = red))
-rend.scene.append(Ellipsoid(position = [1, 0, -4], radius = [1, 1.5, 0.5], material = oro))
-rend.scene.append(Ellipsoid(position = [3, 3, -4], radius = [0.5, 1, 1.5], material = vidrio))
+rend.scene.append(Cylinder(position = [-2, -2.5, -6], radius = 1, height = 1, material = red))
+rend.scene.append(Cylinder(position = [-1, -0.5, -7], radius = 0.5, height = 1, material = oro))
+rend.scene.append(Cylinder(position = [-2, 1, -5], radius = 0.5, height = 1.5, material = vidrio))
+
+rend.scene.append(Ellipsoid(position = [2, -2, -7], radius = [0.5, 0.5, 1], material = green))
+rend.scene.append(Ellipsoid(position = [1, 0, -6], radius = [1, 0.5, 0.5], material = plata))
+rend.scene.append(Ellipsoid(position = [2, 2, -7], radius = [0.5, 1, 0.5], material = vidrio_azul))
 
 
 rend.lights.append(DirectionalLight(direction = [-1,-1,-1], intensity = 1.2))
