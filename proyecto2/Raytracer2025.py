@@ -8,8 +8,8 @@ from material import *
 from BMPTexture import BMPTexture
 import os
  
-width = 512
-height = 512
+width = 1920
+height = 1080
 
 screen = pygame.display.set_mode((width, height), pygame.SCALED)
 clock = pygame.time.Clock()
@@ -26,7 +26,7 @@ mountain_texture = os.path.join(base_path, 'textures/vecteezy_grunge-texture-eff
 mountain = Material(diffuse = [0.7764705882, 0.0, 1.0], spec=50, ks = 0.3, texture = BMPTexture(mountain_texture))
 
 # materiales opacos
-black = Material(diffuse = [0, 0, 0], spec = 10, ks = 0.1, matType = OPAQUE)
+black = Material(diffuse = [0, 0, 0], spec = 50, ks = 0.3, matType = OPAQUE)
 purple = Material(diffuse = [0.7764705882, 0.0, 1.0], spec = 50, ks = 0.3, matType = OPAQUE)
 cyan = Material(diffuse = [0.168627451, 1.0, 0.976470588], spec = 50, ks = 0.3, matType = OPAQUE)
 
@@ -70,30 +70,22 @@ rend.scene.append(Torus(position = [0, -1.9, -6], major_radius = 0.4, minor_radi
 rend.scene.append(Torus(position = [0, -1.5, -3], major_radius = 0.4, minor_radius = 0.05, material = purple))
 
 
-# # Esfera
-# rend.scene.append(Sphere(position=[0, -2.0, -8], radius=0.75, material=blue))
-
-# # Plano (suelo) en y = -3
-# rend.scene.append(Plane(position=[0, -3.0, -5], normal=[0, 1, 0], material=green))
-
-# # Disco
-# rend.scene.append(Disk(position=[3.0, -2.9, -6.0], normal=[0, 1, 0], radius=0.75, material=oro))
-
-# # AABB (caja alineada a ejes)
-# rend.scene.append(AABB(center=[-3.0, 0.0, -6.5], size=[1.0, 1.0, 1.0], material=red))
-
-# # Triángulo
-# rend.scene.append(Triangle(v0=[-0.5, 2.5, -6.0], v1=[0.5, 2.5, -6.0], v2=[0.0, 1.5, -6.0], material=plata))
-
-# # Cono (base en position, eje +Y)
-# rend.scene.append(Cone(position=[-3.0, -2.5, -8.0], radius=0.7, height=1.5, material=vidrio_azul))
-
-# # Toroide
-# rend.scene.append(Torus(position=[3.0, 0.5, -8.0], major_radius=1.0, minor_radius=0.3, material=oro))
-
-rend.lights.append(DirectionalLight(direction=[-1, -1, -1], intensity=1.2, color=[1.0, 0.0, 1.0]))
-# rend.lights.append(DirectionalLight(direction = [-1,-1,-1], intensity = 1.2))
+rend.lights.append(DirectionalLight(direction = [-1,-1,-1], intensity = 0.8))
 rend.lights.append(AmbientLight())
+
+
+rend.lights.append(SpotLight(position = [0, -1, -6], direction = [0, -1, 0], innerAngle = 30, outerAngle = 100, intensity = 2, color = [0.7764705882, 0.0, 1.0]))
+rend.lights.append(SpotLight(position = [0, -1, -3], direction = [0, -1, 0], innerAngle = 30, outerAngle = 100, intensity = 2, color = [0.7764705882, 0.0, 1.0]))
+
+rend.lights.append(PointLight(position = [-2, -1.9, -6], intensity = 1, color = [0.168627451, 1.0, 0.976470588]))
+rend.lights.append(PointLight(position = [-3, -1.9, -5], intensity = 1, color = [0.168627451, 1.0, 0.976470588]))
+rend.lights.append(PointLight(position = [-4, -1.9, -4], intensity = 1, color = [0.168627451, 1.0, 0.976470588]))
+rend.lights.append(PointLight(position = [-5, -1.9, -3], intensity = 1, color = [0.168627451, 1.0, 0.976470588]))
+
+rend.lights.append(PointLight(position = [2, -1.9, -6], intensity = 1, color = [0.168627451, 1.0, 0.976470588]))
+rend.lights.append(PointLight(position = [3, -1.9, -5], intensity = 1, color = [0.168627451, 1.0, 0.976470588]))
+rend.lights.append(PointLight(position = [4, -1.9, -4], intensity = 1, color = [0.168627451, 1.0, 0.976470588]))
+rend.lights.append(PointLight(position = [5, -1.9, -3], intensity = 1, color = [0.168627451, 1.0, 0.976470588]))
 
 rend.glRender() 
 
